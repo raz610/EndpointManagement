@@ -1,0 +1,37 @@
+# This script checks the NetworkCategory of a specified network adapter
+# and sets it to 'Private' if it's not already.
+
+# Define the interface alias to target
+$interfaceAlias = "Ethernet 2"
+
+Write-Host "Checking NetworkCategory for interface: '$interfaceAlias'..."
+
+try {
+    # Get the network adapter module
+    # 'Get-NetAdapter' requires the NetAdapter module, which is usually available by default on Windows.
+    $netAdapter = Get-NetAdapter -Name $interfaceAlias -ErrorAction Stop
+
+    # Get the network connection profile associated with the adapter
+    # 'Get-NetConnectionProfile' requires the NetConnection module.
+    $connectionProfile = Get-NetConnectionProfile -InterfaceIndex $netAdapter.IfIndex -ErrorAction Stop
+
+    Write-Host "Current NetworkCategory for '$interfaceAlias': $($connectionProfile.NetworkCategory)"
+
+    # Check if the NetworkCategory is not 'Private'
+    if ($connectionProfile.NetworkCategory -ne "Private") {
+        Write-Host "NetworkCategory is not 'Private'. Attempting to change it to 'Private'..."
+
+        # Set the NetworkCategory to 'Private'
+        # This command requires administrator privileges.
+        Set-NetConnectionProfile -InterfaceIndex $netAdapter.IfIndex -NetworkCategory Private -ErrorAction Stop
+
+        Write-Host "Successfully changed NetworkCategory for '$interfaceAlias' to 'Private'."
+    } else {
+        Write-Host "NetworkCategory for '$interfaceAlias' is already 'Private'. No changes needed."
+    }
+}
+catch {
+    Write-Error "An error occurred: $($_.Exception.Message)"
+    Write-Error "Please ensure the interface '$interfaceAlias' exists and you are running PowerShell with Administrator privileges."
+}
+
