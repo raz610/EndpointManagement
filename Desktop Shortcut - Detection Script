@@ -1,0 +1,10 @@
+# Detection script for Capena.url shortcut
+
+$desktop = [Environment]::GetFolderPath("Desktop")
+$shortcutPath = "$desktop\Google.url"
+
+if (Test-Path $shortcutPath) {
+    exit 0
+} else {
+    exit 1
+}
