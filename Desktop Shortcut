@@ -1,0 +1,11 @@
+$desktop = [Environment]::GetFolderPath("Desktop")
+$shortcutPath = "$desktop\Google.url"
+
+# Create the .url file content
+$urlContent = @"
+[InternetShortcut]
+URL=https://google.com
+"@
+
+# Write the shortcut file
+$urlContent | Out-File -FilePath $shortcutPath -Encoding ASCII
