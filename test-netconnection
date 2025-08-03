@@ -1,0 +1,125 @@
+# Microsoft Teams Network Connectivity Test Script
+# Tests connectivity to Microsoft Teams/Skype endpoints and IP ranges
+
+Write-Host "Starting Microsoft Teams Network Connectivity Test..." -ForegroundColor Green
+Write-Host "=" * 60
+
+# Function to test TCP connectivity
+function Test-TCPConnection {
+    param(
+        [string]$Target,
+        [int[]]$Ports,
+        [string]$Description
+    )
+    
+    Write-Host "`n[$Description]" -ForegroundColor Yellow
+    Write-Host "Target: $Target"
+    
+    foreach ($port in $Ports) {
+        try {
+            $result = Test-NetConnection -ComputerName $Target -Port $port -WarningAction SilentlyContinue
+            if ($result.TcpTestSucceeded) {
+                Write-Host "  Port $port : SUCCESS" -ForegroundColor Green
+            } else {
+                Write-Host "  Port $port : FAILED" -ForegroundColor Red
+            }
+        }
+        catch {
+            Write-Host "  Port $port : ERROR - $($_.Exception.Message)" -ForegroundColor Red
+        }
+    }
+}
+
+# Function to test basic connectivity (no specific port)
+function Test-BasicConnection {
+    param(
+        [string]$Target,
+        [string]$Description
+    )
+    
+    Write-Host "`n[$Description]" -ForegroundColor Yellow
+    Write-Host "Target: $Target"
+    
+    try {
+        $result = Test-NetConnection -ComputerName $Target -WarningAction SilentlyContinue
+        if ($result.PingSucceeded) {
+            Write-Host "  Basic connectivity: SUCCESS (RTT: $($result.PingReplyDetails.RoundtripTime)ms)" -ForegroundColor Green
+        } else {
+            Write-Host "  Basic connectivity: FAILED" -ForegroundColor Red
+        }
+    }
+    catch {
+        Write-Host "  Basic connectivity: ERROR - $($_.Exception.Message)" -ForegroundColor Red
+    }
+}
+
+# Function to test UDP (limited PowerShell support - informational)
+function Test-UDPInfo {
+    param(
+        [string]$Target,
+        [int[]]$Ports,
+        [string]$Description
+    )
+    
+    Write-Host "`n[$Description] - UDP Testing" -ForegroundColor Yellow
+    Write-Host "Target: $Target"
+    Write-Host "Note: PowerShell Test-NetConnection has limited UDP support" -ForegroundColor Cyan
+    
+    foreach ($port in $Ports) {
+        Write-Host "  UDP Port $port : Test manually with: Test-NetConnection $Target -Port $port" -ForegroundColor Gray
+    }
+}
+
+# Test IP Ranges (testing representative IPs from ranges)
+Write-Host "`n=== TESTING IP RANGES ===" -ForegroundColor Magenta
+
+# Testing representative IPs from 52.112.0.0/14 range
+Test-UDPInfo -Target "52.112.0.1" -Ports @(3478, 3479, 3480, 3481) -Description "IP Range 52.112.0.0/14 - Media Traffic"
+Test-TCPConnection -Target "52.112.0.1" -Ports @(443, 80) -Description "IP Range 52.112.0.0/14 - HTTPS/HTTP"
+
+# Testing representative IPs from 52.122.0.0/15 range  
+Test-UDPInfo -Target "52.122.0.1" -Ports @(3478, 3479, 3480, 3481) -Description "IP Range 52.122.0.0/15 - Media Traffic"
+Test-TCPConnection -Target "52.122.0.1" -Ports @(443, 80) -Description "IP Range 52.122.0.0/15 - HTTPS/HTTP"
+
+# Test Domain Names
+Write-Host "`n=== TESTING DOMAIN NAMES ===" -ForegroundColor Magenta
+
+# Lync and Teams domains
+$lyncTeamsDomains = @(
+    "teams.microsoft.com",
+    "teams.cloud.microsoft.com"
+)
+
+foreach ($domain in $lyncTeamsDomains) {
+    Test-UDPInfo -Target $domain -Ports @(3478, 3479, 3480, 3481) -Description "Teams Domain - Media Traffic"
+    Test-TCPConnection -Target $domain -Ports @(443, 80) -Description "Teams Domain - HTTPS/HTTP"
+}
+
+# Media Services domains
+$mediaServicesDomains = @(
+    "keydelivery.mediaservices.windows.net",
+    "streaming.mediaservices.windows.net"
+)
+
+foreach ($domain in $mediaServicesDomains) {
+    Test-TCPConnection -Target $domain -Ports @(443) -Description "Media Services"
+}
+
+# Other required domains
+Test-TCPConnection -Target "aka.ms" -Ports @(443) -Description "Microsoft URL Shortener"
+Test-TCPConnection -Target "adl.windows.com" -Ports @(443, 80) -Description "Windows Update Service"
+Test-TCPConnection -Target "join.secure.skypeassets.com" -Ports @(443) -Description "Skype Assets"
+Test-TCPConnection -Target "mlccdnprod.azureedge.net" -Ports @(443) -Description "Microsoft CDN"
+
+# Summary
+Write-Host "`n" + "=" * 60
+Write-Host "CONNECTIVITY TEST COMPLETE" -ForegroundColor Green
+Write-Host "=" * 60
+
+Write-Host "`nIMPORTANT NOTES:" -ForegroundColor Yellow
+Write-Host "1. UDP testing has limited PowerShell support - manual testing may be required"
+Write-Host "2. Some IP ranges are tested with representative IPs only"
+Write-Host "3. Firewall rules should allow the specified ports for optimal Teams performance"
+Write-Host "4. For complete testing, consider using specialized network tools"
+Write-Host "`nFor detailed UDP testing, use: Test-NetConnection <target> -Port <udp_port>"
+Write-Host "Example: Test-NetConnection teams.microsoft.com -Port 3478"
