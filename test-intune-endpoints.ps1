@@ -1,297 +1,243 @@
-<# 
-.SYNOPSIS
-  Tests connectivity to Intune network endpoints (FQDNs and IP subnets)
-  from the "Network endpoints for Microsoft Intune" documentation (North America).
-
-.NOTES
-  - Run from a Windows client/server with PowerShell 5.1+.
-  - Requires outbound access to DNS and the tested ports.
-  - Outputs ONLY failed checks.
-#>
-
-$DefaultTcpPorts = @(80,443)
-
-# ---------------------------
-# FQDN endpoints (from Intune endpoints doc - NA)
-# ---------------------------
-$Fqdns = @(
-    # Intune core / management / DO / WUFB / Store / Remote Help / Org messages, etc.
-    "*.manage.microsoft.com",
-    "manage.microsoft.com",
-    "*.dm.microsoft.com",
-    "EnterpriseEnrollment.manage.microsoft.com",
-
-    "*.dl.delivery.mp.microsoft.com",
-    "*.do.dsp.mp.microsoft.com",
-    "*.prod.do.dsp.mp.microsoft.com",
-    "*.delivery.mp.microsoft.com",
-    "*.windowsupdate.com",
-    "*.update.microsoft.com",
-    "tsfe.trafficshaping.dsp.mp.microsoft.com",
-    "adl.windows.com",
-
-    # Autopilot / WNS
-    "time.windows.com",
-    "clientconfig.passport.net",
-    "windowsphone.com",
-    "*.s-microsoft.com",
-    "c.s-microsoft.com",
-
-    # Win32 / PowerShell content CDN
-    "approdimedatapri.azureedge.net",
-    "approdimedatasec.azureedge.net",
-    "approdimedatahotfix.azureedge.net",
-    "euprodimedatapri.azureedge.net",
-    "euprodimedatasec.azureedge.net",
-    "euprodimedatahotfix.azureedge.net",
-    "naprodimedatapri.azureedge.net",
-    "naprodimedatasec.azureedge.net",
-    "naprodimedatahotfix.azureedge.net",
-
-    "swda01-mscdn.manage.microsoft.com",
-    "swda02-mscdn.manage.microsoft.com",
-    "swdb01-mscdn.manage.microsoft.com",
-    "swdb02-mscdn.manage.microsoft.com",
-    "swdc01-mscdn.manage.microsoft.com",
-    "swdc02-mscdn.manage.microsoft.com",
-    "swdd01-mscdn.manage.microsoft.com",
-    "swdd02-mscdn.manage.microsoft.com",
-    "swdin01-mscdn.manage.microsoft.com",
-    "swdin02-mscdn.manage.microsoft.com",
-
-    # WNS
-    "*.notify.windows.com",
-    "*.wns.windows.com",
-
-    # Third-party deployment requirements
-    "ekcert.spserv.microsoft.com",
-    "ekop.intel.com",
-    "ftpm.amd.com",
-
-    # Android AOSP / macOS / PS/Win32 NA
-    "intunecdnpeasd.azureedge.net",
-    "intunecdnpeasd.manage.microsoft.com",
-    "macsidecar.manage.microsoft.com",
-    "macsidecarprod.azureedge.net",
-    "naprodimedatapri.azureedge.net",
-    "naprodimedatasec.azureedge.net",
-    "naprodimedatahotfix.azureedge.net",
-    "imeswda-afd-primary.manage.microsoft.com",
-    "imeswda-afd-secondary.manage.microsoft.com",
-    "imeswda-afd-hotfix.manage.microsoft.com",
-
-    # Microsoft Store for Business / AppInstallManager
-    "displaycatalog.mp.microsoft.com",
-    "purchase.md.mp.microsoft.com",
-    "licensing.mp.microsoft.com",
-    "storeedgefd.dsx.mp.microsoft.com",
-    "cdn.storeedgefd.dsx.mp.microsoft.com",
-
-    # Diagnostic data
-    "*.events.data.microsoft.com",
-
-    # Device Health Attestation (NA examples)
-    "intunemaape1.eus.attest.azure.net",
-    "intunemaape2.eus2.attest.azure.net",
-    "intunemaape3.cus.attest.azure.net",
-    "intunemaape4.wus.attest.azure.net",
-    "intunemaape5.scus.attest.azure.net",
-    "intunemaape6.ncus.attest.azure.net",
-
+# --- CUSTOM TEMPLATE START ---
+$List = @(
+    # Intune Core
+    @{ S = "Intune Core"; ID = "163"; H = "manage.microsoft.com" },
+    @{ S = "Intune Core"; ID = "163"; H = "EnterpriseEnrollment.manage.microsoft.com" },
+    @{ S = "Intune Core"; ID = "163"; H = "104.46.162.97" },
+    @{ S = "Intune Core"; ID = "163"; H = "13.67.13.177" },
+    @{ S = "Intune Core"; ID = "163"; H = "13.67.15.129" },
+    @{ S = "Intune Core"; ID = "163"; H = "13.69.231.129" },
+    @{ S = "Intune Core"; ID = "163"; H = "13.69.67.225" },
+    @{ S = "Intune Core"; ID = "163"; H = "13.70.78.129" },
+    @{ S = "Intune Core"; ID = "163"; H = "13.70.79.129" },
+    @{ S = "Intune Core"; ID = "163"; H = "13.74.111.193" },
+    @{ S = "Intune Core"; ID = "163"; H = "13.77.53.177" },
+    @{ S = "Intune Core"; ID = "163"; H = "13.86.221.177" },
+    @{ S = "Intune Core"; ID = "163"; H = "13.89.174.241" },
+    @{ S = "Intune Core"; ID = "163"; H = "13.89.175.193" },
+    @{ S = "Intune Core"; ID = "163"; H = "20.189.229.1" },
+    @{ S = "Intune Core"; ID = "163"; H = "20.191.167.1" },
+    @{ S = "Intune Core"; ID = "163"; H = "20.37.153.1" },
+    @{ S = "Intune Core"; ID = "163"; H = "20.37.192.129" },
+    @{ S = "Intune Core"; ID = "163"; H = "20.38.81.1" },
+    @{ S = "Intune Core"; ID = "163"; H = "20.41.1.1" },
+    @{ S = "Intune Core"; ID = "163"; H = "20.42.1.1" },
+    @{ S = "Intune Core"; ID = "163"; H = "20.42.130.1" },
+    @{ S = "Intune Core"; ID = "163"; H = "20.42.224.129" },
+    @{ S = "Intune Core"; ID = "163"; H = "20.43.129.1" },
+    @{ S = "Intune Core"; ID = "163"; H = "20.44.19.225" },
+    @{ S = "Intune Core"; ID = "163"; H = "40.119.8.129" },
+    @{ S = "Intune Core"; ID = "163"; H = "40.67.121.225" },
+    @{ S = "Intune Core"; ID = "163"; H = "40.70.151.33" },
+    @{ S = "Intune Core"; ID = "163"; H = "40.71.14.97" },
+    @{ S = "Intune Core"; ID = "163"; H = "40.74.25.1" },
+    @{ S = "Intune Core"; ID = "163"; H = "40.78.245.241" },
+    @{ S = "Intune Core"; ID = "163"; H = "40.78.247.129" },
+    @{ S = "Intune Core"; ID = "163"; H = "40.79.197.65" },
+    @{ S = "Intune Core"; ID = "163"; H = "40.79.197.97" },
+    @{ S = "Intune Core"; ID = "163"; H = "40.80.180.209" },
+    @{ S = "Intune Core"; ID = "163"; H = "40.80.180.225" },
+    @{ S = "Intune Core"; ID = "163"; H = "40.80.184.129" },
+    @{ S = "Intune Core"; ID = "163"; H = "40.82.248.225" },
+    @{ S = "Intune Core"; ID = "163"; H = "40.82.249.129" },
+    @{ S = "Intune Core"; ID = "163"; H = "52.150.137.1" },
+    @{ S = "Intune Core"; ID = "163"; H = "52.162.111.97" },
+    @{ S = "Intune Core"; ID = "163"; H = "52.168.116.129" },
+    @{ S = "Intune Core"; ID = "163"; H = "52.182.141.193" },
+    @{ S = "Intune Core"; ID = "163"; H = "52.236.189.97" },
+    @{ S = "Intune Core"; ID = "163"; H = "52.240.244.161" },
+    @{ S = "Intune Core"; ID = "163"; H = "20.204.193.13" },
+    @{ S = "Intune Core"; ID = "163"; H = "20.204.193.11" },
+    @{ S = "Intune Core"; ID = "163"; H = "20.192.174.217" },
+    @{ S = "Intune Core"; ID = "163"; H = "20.192.159.41" },
+    @{ S = "Intune Core"; ID = "163"; H = "104.208.197.65" },
+    @{ S = "Intune Core"; ID = "163"; H = "172.160.217.161" },
+    @{ S = "Intune Core"; ID = "163"; H = "172.201.237.161" },
+    @{ S = "Intune Core"; ID = "163"; H = "172.202.86.193" },
+    @{ S = "Intune Core"; ID = "163"; H = "172.205.63.1" },
+    @{ S = "Intune Core"; ID = "163"; H = "172.212.214.1" },
+    @{ S = "Intune Core"; ID = "163"; H = "172.215.131.1" },
+    @{ S = "Intune Core"; ID = "163"; H = "20.168.189.129" },
+    @{ S = "Intune Core"; ID = "163"; H = "20.199.207.193" },
+    @{ S = "Intune Core"; ID = "163"; H = "20.204.194.129" },
+    @{ S = "Intune Core"; ID = "163"; H = "20.208.149.193" },
+    @{ S = "Intune Core"; ID = "163"; H = "20.208.157.129" },
+    @{ S = "Intune Core"; ID = "163"; H = "20.214.131.177" },
+    @{ S = "Intune Core"; ID = "163"; H = "20.91.147.73" },
+    @{ S = "Intune Core"; ID = "163"; H = "4.145.74.225" },
+    @{ S = "Intune Core"; ID = "163"; H = "4.150.254.65" },
+    @{ S = "Intune Core"; ID = "163"; H = "4.154.145.225" },
+    @{ S = "Intune Core"; ID = "163"; H = "4.200.254.33" },
+    @{ S = "Intune Core"; ID = "163"; H = "4.207.244.1" },
+    @{ S = "Intune Core"; ID = "163"; H = "4.213.25.65" },
+    @{ S = "Intune Core"; ID = "163"; H = "4.213.86.129" },
+    @{ S = "Intune Core"; ID = "163"; H = "4.216.205.33" },
+    @{ S = "Intune Core"; ID = "163"; H = "4.237.143.129" },
+    @{ S = "Intune Core"; ID = "163"; H = "40.84.70.129" },
+    @{ S = "Intune Core"; ID = "163"; H = "48.218.252.129" },
+    @{ S = "Intune Core"; ID = "163"; H = "57.151.0.193" },
+    @{ S = "Intune Core"; ID = "163"; H = "57.153.235.1" },
+    @{ S = "Intune Core"; ID = "163"; H = "57.154.140.129" },
+    @{ S = "Intune Core"; ID = "163"; H = "57.154.195.1" },
+    @{ S = "Intune Core"; ID = "163"; H = "57.155.45.129" },
+    @{ S = "Intune Core"; ID = "163"; H = "68.218.134.97" },
+    @{ S = "Intune Core"; ID = "163"; H = "74.224.214.65" },
+    @{ S = "Intune Core"; ID = "163"; H = "74.242.35.1" },
+    @{ S = "Intune Core"; ID = "163"; H = "172.208.170.1" },
+    @{ S = "Intune Core"; ID = "163"; H = "74.241.231.1" },
+    @{ S = "Intune Core"; ID = "163"; H = "74.242.184.129" },
+    # Front Door
+    @{ S = "Intune Core"; ID = "163"; H = "13.107.219.1" },
+    @{ S = "Intune Core"; ID = "163"; H = "13.107.227.1" },
+    @{ S = "Intune Core"; ID = "163"; H = "13.107.228.1" },
+    @{ S = "Intune Core"; ID = "163"; H = "150.171.97.1" },
+    @{ S = "Intune Core"; ID = "163"; H = "2620:1ec:40::1" },
+    @{ S = "Intune Core"; ID = "163"; H = "2620:1ec:49::1" },
+    @{ S = "Intune Core"; ID = "163"; H = "2620:1ec:4a::1" },
+    # MDM Delivery Optimization
+    @{ S = "Delivery Optimization"; ID = "172"; H = "do.dsp.mp.microsoft.com" },
+    @{ S = "Delivery Optimization"; ID = "172"; H = "dl.delivery.mp.microsoft.com" },
+    # MEM Win32Apps
+    @{ S = "MEM Win32Apps"; ID = "170"; H = "swda01-mscdn.manage.microsoft.com" },
+    @{ S = "MEM Win32Apps"; ID = "170"; H = "swda02-mscdn.manage.microsoft.com" },
+    @{ S = "MEM Win32Apps"; ID = "170"; H = "swdb01-mscdn.manage.microsoft.com" },
+    @{ S = "MEM Win32Apps"; ID = "170"; H = "swdb02-mscdn.manage.microsoft.com" },
+    @{ S = "MEM Win32Apps"; ID = "170"; H = "swdc01-mscdn.manage.microsoft.com" },
+    @{ S = "MEM Win32Apps"; ID = "170"; H = "swdc02-mscdn.manage.microsoft.com" },
+    @{ S = "MEM Win32Apps"; ID = "170"; H = "swdd01-mscdn.manage.microsoft.com" },
+    @{ S = "MEM Win32Apps"; ID = "170"; H = "swdd02-mscdn.manage.microsoft.com" },
+    @{ S = "MEM Win32Apps"; ID = "170"; H = "swdin01-mscdn.manage.microsoft.com" },
+    @{ S = "MEM Win32Apps"; ID = "170"; H = "swdin02-mscdn.manage.microsoft.com" },
+    # Auth
+    @{ S = "Device authentication"; ID = "97"; H = "account.live.com" },
+    @{ S = "Device authentication"; ID = "97"; H = "login.live.com" },
+    # Endpoint Discovery
+    @{ S = "Endpoint Discovery"; ID = "190"; H = "go.microsoft.com" },
+    # Dependency
+    @{ S = "Feature Deployment"; ID = "189"; H = "config.edge.skype.com" },
+    @{ S = "Feature Deployment"; ID = "189"; H = "ecs.office.com" },
+    # Organizational messages
+    @{ S = "Organizational messages"; ID = "192"; H = "fd.api.orgmsg.microsoft.com" },
+    @{ S = "Organizational messages"; ID = "192"; H = "ris.prod.api.personalization.ideas.microsoft.com" },
+    # Authentication dependencies
+    @{ S = "Authentication and Identity"; ID = "56"; H = "login.microsoftonline.com" },
+    @{ S = "Authentication and Identity"; ID = "56"; H = "graph.windows.net" },
+    # Office Customization Service
+    @{ S = "Office Customization Service"; ID = "150"; H = "officeconfig.msocdn.com" },
+    @{ S = "Office Customization Service"; ID = "150"; H = "config.office.com" },
+    # Identity supporting services & CDNs
+    @{ S = "Identity supporting services & CDNs"; ID = "59"; H = "enterpriseregistration.windows.net" },
+    @{ S = "Identity supporting services & CDNs"; ID = "59"; H = "certauth.enterpriseregistration.windows.net" },
+    # Windows Push Notifications (WNS)
+    @{ S = "MEM - WNS"; ID = "171"; H = "notify.windows.com" },
+    @{ S = "MEM - WNS"; ID = "171"; H = "wns.windows.com" },
+    @{ S = "MEM - WNS"; ID = "171"; H = "sinwns1011421.wns.windows.com" },
+    @{ S = "MEM - WNS"; ID = "171"; H = "sin.notify.windows.com" },
     # Remote Help
-    "*.support.services.microsoft.com",
-    "remoteassistance.support.services.microsoft.com",
-    "remoteassistanceprodacs.communication.azure.com",
-    "remoteassistanceprodacseu.communication.azure.com",
-    "remotehelp.microsoft.com",
-    "teams.microsoft.com",
-    "edge.skype.com",
-    "edge.microsoft.com",
-    "aadcdn.msftauth.net",
-    "aadcdn.msauth.net",
-    "alcdn.msauth.net",
-    "wcpstatic.microsoft.com",
-    "*.aria.microsoft.com",
-    "browser.pipe.aria.microsoft.com",
-    "*.events.data.microsoft.com",
-    "*.monitor.azure.com",
-    "js.monitor.azure.com",
-    "*.trouter.communication.microsoft.com",
-    "*.trouter.teams.microsoft.com",
-    "api.flightproxy.skype.com",
-    "ecs.communication.microsoft.com",
-
-    # Remote Help – WebPubSub
-    "*.webpubsub.azure.com",
-
-    # Remote Help – GCC
-    "remoteassistanceweb-gcc.usgov.communication.azure.us",
-    "gcc.remotehelp.microsoft.com",
-    "gcc.relay.remotehelp.microsoft.com",
-    "*.gov.teams.microsoft.us",
-
-    # Org messages dependencies
-    "config.edge.skype.com",
-    "ecs.office.com",
-    "fd.api.orgmsg.microsoft.com",
-    "ris.prod.api.personalization.ideas.microsoft.com",
-
-    # Identity / auth deps
-    "login.microsoftonline.com",
-    "graph.windows.net",
-    "enterpriseregistration.windows.net",
-    "certauth.enterpriseregistration.windows.net",
-
-    # Endpoint discovery
-    "go.microsoft.com"
+    @{ S = "Remote Help"; ID = "181"; H = "support.services.microsoft.com" },
+    @{ S = "Remote Help"; ID = "181"; H = "remoteassistance.support.services.microsoft.com" },
+    @{ S = "Remote Help"; ID = "181"; H = "teams.microsoft.com" },
+    @{ S = "Remote Help"; ID = "181"; H = "remoteassistanceprodacs.communication.azure.com" },
+    @{ S = "Remote Help"; ID = "181"; H = "edge.skype.com" },
+    @{ S = "Remote Help"; ID = "181"; H = "aadcdn.msftauth.net" },
+    @{ S = "Remote Help"; ID = "181"; H = "aadcdn.msauth.net" },
+    @{ S = "Remote Help"; ID = "181"; H = "alcdn.msauth.net" },
+    @{ S = "Remote Help"; ID = "181"; H = "wcpstatic.microsoft.com" },
+    @{ S = "Remote Help"; ID = "181"; H = "aria.microsoft.com" },
+    @{ S = "Remote Help"; ID = "181"; H = "browser.pipe.aria.microsoft.com" },
+    @{ S = "Remote Help"; ID = "181"; H = "events.data.microsoft.com" },
+    @{ S = "Remote Help"; ID = "181"; H = "v10c.events.data.microsoft.com" },
+    @{ S = "Remote Help"; ID = "181"; H = "monitor.azure.com" },
+    @{ S = "Remote Help"; ID = "181"; H = "js.monitor.azure.com" },
+    @{ S = "Remote Help"; ID = "181"; H = "edge.microsoft.com" },
+    @{ S = "Remote Help"; ID = "181"; H = "trouter.communication.microsoft.com" },
+    @{ S = "Remote Help"; ID = "181"; H = "trouter.teams.microsoft.com" },
+    @{ S = "Remote Help"; ID = "181"; H = "api.flightproxy.skype.com" },
+    @{ S = "Remote Help"; ID = "181"; H = "ecs.communication.microsoft.com" },
+    @{ S = "Remote Help"; ID = "181"; H = "remotehelp.microsoft.com" },
+    @{ S = "Remote Help"; ID = "181"; H = "remoteassistanceprodacseu.communication.azure.com" },
+    @{ S = "Remote Help Chat"; ID = "187"; H = "webpubsub.azure.com" },
+    @{ S = "Remote Help Chat"; ID = "187"; H = "AMSUA0101-RemoteAssistService-pubsub.webpubsub.azure.com" },
+    # Autopilot
+    @{ S = "Windows Autopilot - Windows Update"; ID = "164"; H = "windowsupdate.com" },
+    @{ S = "Windows Autopilot - Windows Update"; ID = "164"; H = "dl.delivery.mp.microsoft.com" },
+    @{ S = "Windows Autopilot - Windows Update"; ID = "164"; H = "prod.do.dsp.mp.microsoft.com" },
+    @{ S = "Windows Autopilot - Windows Update"; ID = "164"; H = "delivery.mp.microsoft.com" },
+    @{ S = "Windows Autopilot - Windows Update"; ID = "164"; H = "update.microsoft.com" },
+    @{ S = "Windows Autopilot - Windows Update"; ID = "164"; H = "tsfe.trafficshaping.dsp.mp.microsoft.com" },
+    @{ S = "Windows Autopilot - Windows Update"; ID = "164"; H = "adl.windows.com" },
+    @{ S = "Windows Autopilot - NTP Sync"; ID = "165"; H = "time.windows.com" },
+    @{ S = "Windows Autopilot - WNS Dependencies"; ID = "169"; H = "clientconfig.passport.net" },
+    @{ S = "Windows Autopilot - WNS Dependencies"; ID = "169"; H = "windowsphone.com" },
+    @{ S = "Windows Autopilot - WNS Dependencies"; ID = "169"; H = "s-microsoft.com" },
+    @{ S = "Windows Autopilot - WNS Dependencies"; ID = "169"; H = "c.s-microsoft.com" },
+    @{ S = "Windows Autopilot - Third-party deployment dependencies"; ID = "173"; H = "ekop.intel.com" },
+    @{ S = "Windows Autopilot - Third-party deployment dependencies"; ID = "173"; H = "ekcert.spserv.microsoft.com" },
+    @{ S = "Windows Autopilot - Third-party deployment dependencies"; ID = "173"; H = "ftpm.amd.com" },
+    @{ S = "Windows Autopilot - Diagnostics upload"; ID = "182"; H = "lgmsapeweu.blob.core.windows.net" },
+    @{ S = "Windows Autopilot - Diagnostics upload"; ID = "182"; H = "lgmsapewus2.blob.core.windows.net" },
+    @{ S = "Windows Autopilot - Diagnostics upload"; ID = "182"; H = "lgmsapesea.blob.core.windows.net" },
+    @{ S = "Windows Autopilot - Diagnostics upload"; ID = "182"; H = "lgmsapeaus.blob.core.windows.net" },
+    @{ S = "Windows Autopilot - Diagnostics upload"; ID = "182"; H = "lgmsapeind.blob.core.windows.net" },
+    # Defender
+    @{ S = "Defender For Endpoint"; ID = "163"; H = "dm.microsoft.com" },
+    # EPM
+    @{ S = "EPM"; ID = "163"; H = "dm.microsoft.com" },
+    @{ S = "EPM"; ID = "181"; H = "events.data.microsoft.com" },
+    # Store
+    @{ S = "Microsoft Store API"; ID = "None"; H = "displaycatalog.mp.microsoft.com" },
+    @{ S = "Microsoft Store API"; ID = "None"; H = "purchase.md.mp.microsoft.com" },
+    @{ S = "Microsoft Store API"; ID = "None"; H = "licensing.mp.microsoft.com" },
+    @{ S = "Microsoft Store API"; ID = "None"; H = "storeedgefd.dsx.mp.microsoft.com" },
+    # Attestation
+    @{ S = "Microsoft Azure attestation"; ID = "North America"; H = "intunemaape1.eus.attest.azure.net" },
+    @{ S = "Microsoft Azure attestation"; ID = "North America"; H = "intunemaape2.eus2.attest.azure.net" },
+    @{ S = "Microsoft Azure attestation"; ID = "North America"; H = "intunemaape3.cus.attest.azure.net" },
+    @{ S = "Microsoft Azure attestation"; ID = "North America"; H = "intunemaape4.wus.attest.azure.net" },
+    @{ S = "Microsoft Azure attestation"; ID = "North America"; H = "intunemaape5.scus.attest.azure.net" },
+    @{ S = "Microsoft Azure attestation"; ID = "North America"; H = "intunemaape6.ncus.attest.azure.net" },
+    @{ S = "Microsoft Azure attestation"; ID = "Europe"; H = "intunemaape7.neu.attest.azure.net" },
+    @{ S = "Microsoft Azure attestation"; ID = "Europe"; H = "intunemaape8.neu.attest.azure.net" },
+    @{ S = "Microsoft Azure attestation"; ID = "Europe"; H = "intunemaape9.neu.attest.azure.net" },
+    @{ S = "Microsoft Azure attestation"; ID = "Europe"; H = "intunemaape10.weu.attest.azure.net" },
+    @{ S = "Microsoft Azure attestation"; ID = "Europe"; H = "intunemaape11.weu.attest.azure.net" },
+    @{ S = "Microsoft Azure attestation"; ID = "Europe"; H = "intunemaape12.weu.attest.azure.net" },
+    # MacOS
+    @{ S = "MacOS"; ID = "North America"; H = "macsidecar.manage.microsoft.com" },
+    @{ S = "MacOS"; ID = "North America"; H = "macsidecarprod.azureedge.net" },
+    @{ S = "MacOS"; ID = "Europe"; H = "macsidecareu.manage.microsoft.com" },
+    @{ S = "MacOS"; ID = "Europe"; H = "macsidecarprodeu.azureedge.net" },
+    # Powershell
+    @{ S = "Powershell"; ID = "North America"; H = "imeswda-afd-primary.manage.microsoft.com" },
+    @{ S = "Powershell"; ID = "North America"; H = "imeswda-afd-secondary.manage.microsoft.com" },
+    @{ S = "Powershell"; ID = "North America"; H = "imeswda-afd-hotfix.manage.microsoft.com" },
+    @{ S = "Powershell"; ID = "Europe"; H = "imeswdb-afd-primary.manage.microsoft.com" },
+    @{ S = "Powershell"; ID = "Europe"; H = "imeswdb-afd-secondary.manage.microsoft.com" },
+    @{ S = "Powershell"; ID = "Europe"; H = "imeswdb-afd-hotfix.manage.microsoft.com" }
 )
 
-# ---------------------------
-# IP subnets (from Intune endpoints doc - NA)
-# ---------------------------
-$IpSubnets = @(
-    "4.145.74.224/27", "4.150.254.64/27", "4.154.145.224/27", "4.200.254.32/27",
-    "4.207.244.0/27", "4.213.25.64/27", "4.213.86.128/25", "4.216.205.32/27",
-    "4.237.143.128/25",
-    "13.67.13.176/28", "13.67.15.128/27", "13.69.67.224/28", "13.69.231.128/28",
-    "13.70.78.128/28", "13.70.79.128/27", "13.74.111.192/27", "13.77.53.176/28",
-    "13.86.221.176/28", "13.89.174.240/28", "13.89.175.192/28",
-    "20.37.153.0/24", "20.37.192.128/25", "20.38.81.0/24", "20.41.1.0/24",
-    "20.42.1.0/24", "20.42.130.0/24", "20.42.224.128/25", "20.43.129.0/24",
-    "20.44.19.224/27", "20.91.147.72/29", "20.168.189.128/27",
-    "20.189.172.160/27", "20.189.229.0/25", "20.191.167.0/25",
-    "20.192.159.40/29", "20.192.174.216/29", "20.199.207.192/28",
-    "20.204.193.10/31", "20.204.193.12/30", "20.204.194.128/31",
-    "20.208.149.192/27", "20.208.157.128/27", "20.214.131.176/29",
-    "40.67.121.224/27", "40.70.151.32/28", "40.71.14.96/28", "40.74.25.0/24",
-    "40.78.245.240/28", "40.78.247.128/27", "40.79.197.64/27", "40.79.197.96/28",
-    "40.80.180.208/28", "40.80.180.224/27", "40.80.184.128/25",
-    "40.82.248.224/28", "40.82.249.128/25", "40.84.70.128/25",
-    "40.119.8.128/25",
-    "48.218.252.128/25",
-    "52.150.137.0/25", "52.162.111.96/28", "52.168.116.128/27",
-    "52.182.141.192/27", "52.236.189.96/27", "52.240.244.160/27",
-    "57.151.0.192/27", "57.153.235.0/25", "57.154.140.128/25",
-    "57.154.195.0/25", "57.155.45.128/25",
-    "68.218.134.96/27",
-    "74.224.214.64/27", "74.242.35.0/25",
-    "104.46.162.96/27", "104.208.197.64/27",
-    "172.160.217.160/27", "172.201.237.160/27", "172.202.86.192/27",
-    "172.205.63.0/25", "172.212.214.0/25", "172.215.131.0/27",
-    "13.107.219.0/24", "13.107.227.0/24", "13.107.228.0/23",
-    "150.171.97.0/24",
-    "2620:1ec:40::/48", "2620:1ec:49::/48", "2620:1ec:4a::/47"
-)
+Write-Host "Checking connections in Parallel... (Fast mode)" -ForegroundColor Cyan
 
-# ---------------------------
-# Helper: get first usable IPv4 from CIDR
-# ---------------------------
-function Get-FirstHostFromCidr {
-    param(
-        [Parameter(Mandatory)]
-        [string]$Cidr
-    )
-    if ($Cidr -notmatch "/") { return $Cidr }
-
-    $parts = $Cidr.Split("/")
-    $ipStr = $parts[0]
-    $prefix = [int]$parts[1]
-
-    # Skip IPv6 for this simple ICMP check
-    if ($ipStr -like "*:*") {
-        return $null
-    }
-
-    $ip = [System.Net.IPAddress]::Parse($ipStr)
-    $bytes = $ip.GetAddressBytes()
-
-    $maskBytes = [byte[]](0,0,0,0)
-    for ($i=0; $i -lt 4; $i++) {
-        $bitsThisByte = [Math]::Max([Math]::Min($prefix - ($i*8), 8), 0)
-        if ($bitsThisByte -le 0) { $maskBytes[$i] = 0; continue }
-        $maskBytes[$i] = [byte](0xFF -shl (8 - $bitsThisByte) -band 0xFF)
-    }
-
-    $netBytes = [byte[]]::new(4)
-    for ($i=0; $i -lt 4; $i++) {
-        $netBytes[$i] = $bytes[$i] -band $maskBytes[$i]
-    }
-
-    # first usable host = network + 1 (simple heuristic)
-    $netBytes[3] = [byte]([int]$netBytes[3] + 1)
-    return ([System.Net.IPAddress]::new($netBytes)).ToString()
-}
-
-$failedFqdns = New-Object System.Collections.Generic.List[object]
-$failedIps   = New-Object System.Collections.Generic.List[object]
-
-Write-Host "Testing FQDN connectivity (TCP $($DefaultTcpPorts -join ','))..." -ForegroundColor Cyan
-
-foreach ($fqdn in $Fqdns | Sort-Object -Unique) {
-    # DNS resolution
-    try {
-        $null = Resolve-DnsName -Name $fqdn -ErrorAction Stop
-    }
-    catch {
-        $failedFqdns.Add([pscustomobject]@{
-            Endpoint = $fqdn
-            Type     = 'FQDN'
-            Port     = '-'
-            Reason   = 'DNS resolution failed'
-        })
-        continue
-    }
-
-    foreach ($port in $DefaultTcpPorts) {
-        $res = Test-NetConnection -ComputerName $fqdn -Port $port -InformationLevel Quiet -WarningAction SilentlyContinue
-        if (-not $res) {
-            $failedFqdns.Add([pscustomobject]@{
-                Endpoint = $fqdn
-                Type     = 'FQDN'
-                Port     = $port
-                Reason   = 'TCP connection failed'
-            })
+# Use Parallel ForEach for 50x speed increase
+$Failures = $List | ForEach-Object -Parallel {
+    $HostName = $_.H -replace "https://", "" # Clean formatting
+    
+    # Test connection silently
+    $Test = Test-NetConnection -ComputerName $HostName -Port 443 -InformationLevel Quiet
+    
+    if ($Test -eq $false) {
+        [PSCustomObject]@{
+            Service  = $_.S
+            ID       = $_.ID
+            Endpoint = $_.H
+            Status   = "FAILED"
         }
     }
-}
+} -ThrottleLimit 50 # Process 50 endpoints at once
 
-Write-Host "Testing IP subnet reachability (ICMP ping to first host)..." -ForegroundColor Cyan
-
-foreach ($cidr in $IpSubnets | Sort-Object -Unique) {
-    $hostIp = Get-FirstHostFromCidr -Cidr $cidr
-    if (-not $hostIp) {
-        $failedIps.Add([pscustomobject]@{
-            Endpoint = $cidr
-            Type     = 'IPSubnet'
-            Port     = 'ICMP'
-            Reason   = 'Skipped (IPv6 or parse error)'
-        })
-        continue
-    }
-
-    $ping = Test-Connection -ComputerName $hostIp -Count 1 -Quiet -ErrorAction SilentlyContinue
-    if (-not $ping) {
-        $failedIps.Add([pscustomobject]@{
-            Endpoint = $cidr
-            Type     = 'IPSubnet'
-            Port     = 'ICMP'
-            Reason   = "Ping to $hostIp failed"
-        })
-    }
-}
-
-Write-Host ""
-Write-Host "========= FAILED FQDN CHECKS =========" -ForegroundColor Yellow
-if ($failedFqdns.Count -eq 0) {
-    Write-Host "No FQDN failures detected."
+if ($Failures) {
+    Write-Host "`nERRORS DETECTED:" -ForegroundColor Red
+    $Failures | Format-Table -AutoSize
 } else {
-    $failedFqdns | Sort-Object Endpoint,Port | Format-Table -AutoSize
-}
-
-Write-Host ""
-Write-Host "========= FAILED IP SUBNET CHECKS =========" -ForegroundColor Yellow
-if ($failedIps.Count -eq 0) {
-    Write-Host "No IP subnet failures detected."
-} else {
-    $failedIps | Sort-Object Endpoint | Format-Table -AutoSize
+    Write-Host "`nSUCCESS: All endpoints reached." -ForegroundColor Green
 }
