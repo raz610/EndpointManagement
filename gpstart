@@ -1,0 +1,11 @@
+if (Get-Service -Name PanGPS -ErrorAction SilentlyContinue) {
+    $globalProtectService = Get-Service -Name PanGPS
+    if ($globalProtectService.Status -eq "Running") {
+        Write-Host "Palo Alto GlobalProtect service is running."
+    } else {
+        Start-Service -Name PanGPS
+        Write-Host "Palo Alto GlobalProtect service has been started."
+    }
+} else {
+    Write-Host "Palo Alto GlobalProtect service is not installed."
+}
